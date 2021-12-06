@@ -2,17 +2,18 @@
 MSG: .asciiz "\nInsira a tua tentativa de descodificação:\n"
 BR: .asciiz "\n"
 
+.align 4
+
 buffer: .space 4
 
 .align 1
-tentativas: .space 40			#Array de Tentativas para jogo
+tentativas: .space 44			#Array de Tentativas para jogo
 
 .align 1
 cores: .ascii "BGRWPO"			#Azul, Verde, Vermelho, Branco, Preto, Laranja
 
 .align 1
 code_let: .space 4			#Array onde estara o codigo em formato Letra
-
 
 .align 4
 code: .space 12				#Array onde estara o codigo gerado pelo random_4
@@ -56,7 +57,7 @@ main:
 	li $t2, 0
 	
 main_loop:
-	beq $t2, 44, end_loop
+	beq $t2, 40, end_loop
 	la $a0, MSG
 	li $v0, 4
 	syscall
@@ -66,17 +67,18 @@ main_loop:
 	syscall
 	
 	li $t3, 0
+	
 
 loop_tent:
 	beq $t3, 4, end_loop_tent	
-	add $a0, $a0, $t3	
+	lb $a0, buffer($t3)
+	addi $t0, $t0, 1
 	sb $a0, ($t0)
 	addi $t3, $t3, 1
 	j loop_tent
 
 end_loop_tent:	
 	add $v0, $v0, $0
-	addi $t0, $t0, 4
 	addi $t2, $t2, 4
 	j main_loop
 	
