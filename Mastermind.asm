@@ -1,6 +1,12 @@
 .data
 MSG: .asciiz "\nInsira a tua tentativa de descodificação:\n"
 BR: .asciiz "\n"
+MSG2: .asciiz "\nPontuação: \n"
+MSG3: .asciiz "\nContinuar o jogo? 'e' para sair do jogo.\n"
+MSG_INVALIDO: .asciiz "\nCarater invalido!\n"
+end_letter: .asciiz "e\n"
+
+end_input: .space 1
 
 .align 4
 
@@ -100,5 +106,23 @@ loop2:
 	addi $t1, $t1, 1
 	j loop2
 	
-end: li $v0,10
+end: 
+     la $a0, MSG2
+     li $v0, 4
+     syscall
+     la $a0, MSG3
+     li $v0, 4
+     syscall
+     
+     li $v0, 8
+     la $a0, end_input
+     syscall # Resposta do usuario
+     move $t0, $a0 # Grava a resposta em $t0
+     
+     la $t2, end_letter 
+     lb $t3, ($t0)
+     lb $t4, ($t2)
+     bne $t3, $t4, rand_4 # Se não escrever 'e' o jogo continua
+
+     li $v0,10
      syscall
