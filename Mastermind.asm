@@ -3,30 +3,42 @@ MSG: .asciiz "\nInsira a tua tentativa de descodificação:\n"
 BR: .asciiz "\n"
 MSG2: .asciiz "\nPontuação: \n"
 MSG3: .asciiz "\nContinuar o jogo? 'e' para sair do jogo.\n"
-MSG_INVALIDO: .asciiz "\nCarater invalido!\n"
+MSG_INVALIDA: .asciiz "\nCarater invalido!\n"
 end_letter: .asciiz "e\n"
+
+
+
+.align 2
+buffer: .space 4
+
+.align 0
 
 end_input: .space 1
 
-.align 4
+.align 0
+verver: .ascii " oO"
 
-buffer: .space 4
-
-.align 1
+.align 0
 tentativas: .space 44			#Array de Tentativas para jogo
 
-.align 1
+.align 0
 cores: .ascii "BGRWPO"			#Azul, Verde, Vermelho, Branco, Preto, Laranja
 
-.align 1
+.align 0
 code_let: .space 4			#Array onde estara o codigo em formato Letra
 
-.align 4
+.align 2
 code: .space 12				#Array onde estara o codigo gerado pelo random_4
 
+.align 2
+compare: .space 12
+
+.align 2
+aux: .space 12
 
 .text
 
+############################################################################ INICIO JOGO E RANDOMIZER DO CODIGO
 rand_4: li $t0, 0
 loop:   beq $t0, 16, codigo_troca
 	li $v0, 42
@@ -55,7 +67,9 @@ codigo_letras:
 	addi $s7, $s7, 4
 	addi $s2, $s2, 1
 	j codigo_letras
+###############################################################################################################
 
+######################################################################################### INICIO DO JOGO JOGADO
 main: 	
 	la $t0, tentativas
 	li $t2, 0
@@ -64,61 +78,135 @@ main_loop:
 	beq $t2, 40, end_loop
 	la $a0, MSG
 	li $v0, 4
-	syscall 
+	syscall
 	
 	la $a0, buffer
 	li $v0,8
 	syscall
 	
-	li $t3, 0
+	jal verificacao_cod
 	
-
-loop_tent:
-	beq $t3, 4, check # Grava os valores inseridos pelo usuario, $t3 é um pointer para o numero de letras que o usuario tem de inserir || Alterado para check original end_loop_tent
-	lb $a0, buffer($t3) # Carrega o valor do buffer para $a0 de $a0
+loop_tent: li $t3, 0 
+loop_tent_a:
+	beq $t3, 4, end_loop_tent	
+	lb $a0, buffer($t3)
 	addi $t0, $t0, 1
-	sb $a0, ($t0) # Grava o valor no buffer baseado em $t0
+	sb $a0, ($t0)
 	addi $t3, $t3, 1
-	j loop_tent
+	j loop_tent_a
 
-############################################################## Teste para ver se o usuario não usou letras que não fazem parte do jogo #######################################################
-check:	
-	j check_letters
 end_loop_tent:
-	add $v0, $v0, $0
-	addi $t2, $t2, 4
-	j main_loop
-	
-check_letters:
-	li $t4, 0
-	li $t5, 0
-	li $t6, 0
-	li $t8, 0
-loop_letters:
-	beq $t4, 4, end_loop_tent # Se o utilizador tiver escrito tudo corretamente volta ao end_loop_tent
-	lb $s5, buffer($t4) # Carrega o buffer para $s5, o $t4 vai sendo atualizado
-	lb $s6, cores($t5) # Carregamos os valores das cores para $s6 para fazermos a comparação
-loop_check_letters:
-	beq $s5, $s6, pass_check # Se for encontrado um termo igual salta da função
-	addi $s6, $s6, 1 # Passa para o proximo valor de cores ( Não está a passar para os proximos valores
-	beq $t6, 6, fail_check # Se tiver esgotado todos os valores do check e nenhum ter sido confirmado
-	addi $t6, $t6, 1 # Numero de cores 
-	j loop_check_letters
-pass_check:
-	li $t6, 0 # Reinicia o valor para o proximo ciclo
-	addi $s5, $s5, 1
-	addi $t4, $t4, 1
-	j loop_letters
-fail_check:
-	li $v0, 4
-	la $a0, MSG_INVALIDO
-	syscall
-	j main # Volta para repor a combinação. Ele repoe o numero de tentativas.  A corrigir
-	
-end_loop_check:
-	j end_loop_tent 
+    add $v0, $v0, $0
+    addi $t2, $t2, 4
+    j main_loop
+    
+#######################################################################################################################
+# VERIFICAÇAO DO CODIGO INSERIDO
 
-##############################################################################################################################################################################################
+verificacao_cod:
+	la $t5, cores
+	la $t6, buffer
+	la $t7, compare
+	li $s5, 0
+	li $s6, 0
+	li $s7, 0
+loop_c:
+	beq $s6, 4, sair
+loop_c_2:
+	lb $t3, ($t5)
+	lb $t4, ($t6)
+	beq $s5, 6, diferente
+	beq $t4, $t3, igual
+	addi $s5, $s5, 1
+	addi $t5, $t5, 1
+	j loop_c_2
+			
+igual:
+	addi $s7, $0, 1
+	sw $s7, ($t7)
+	addi $t7, $t7, 4
+	addi $s6, $s6, 1
+	addi $t6, $t6, 1
+	li $s5, 0
+	la $t5, cores
+	j loop_c
+
+diferente:
+	add $s7, $0, $0
+	sw $s7, ($t7)
+	addi $t7, $t7, 4
+	addi $s6, $s6, 1
+	addi $t6, $t6, 1
+	li $s5, 0
+	la $t5, cores
+	j loop_c
+	
+sair:
+	la $t7, compare
+	li $t9, 1
+	li $a3, 0
+sair_loop:
+	beq $a3, 4, verifica_rand	
+	lw $t8, ($t7)
+	mul $t9, $t9, $t8
+	addi $t7, $t7, 4
+	addi $a3, $a3, 1
+	j sair_loop
+	
+sair_loop_a:
+	beq $t9, 1, loop_tent
+	
+	li $v0, 4
+	la $a0, MSG_INVALIDA
+	syscall
+			
+	jr $ra
+	
+#########################################################################################################################
+# VERIFICAÇÃO DO CODIGO RANDOM
+
+verifica_rand:
+	la $t5, code_let
+	la $t6, buffer
+	la $t7, aux
+	li $s5, 0
+	li $s6, 0
+	
+verifica_loop:
+	beq $s6, 4, end_verifica
+verifica_loop_a:
+	lb $t3, ($t5)
+	lb $t4, ($t6)
+	beq $t3, $t4, cpc
+	
+	addi $t8, $0, 1
+	sw $t8, ($t7)	
+	addi $s5, $s5, 1
+	addi $s6, $s6, 1
+	addi $t5, $t5, 1
+	addi $t6, $t6, 1
+	addi $t7, $t7, 4
+	j verifica_loop
+	
+cpc:
+	addi $t8, $0, 2
+	sw $t8, ($t7)	
+	addi $s5, $s5, 1
+	addi $s6, $s6, 1
+	addi $t5, $t5, 1
+	addi $t6, $t6, 1
+	addi $t7, $t7, 4
+	j verifica_loop
+	
+end_verifica:
+
+	la $a0, aux
+	li $v0, 4
+	syscall
+	jr $ra
+
+
+############################################################################################################# FIM DO JOGO
 end_loop:
 	li $t1, 0
 	la $t0, code_let
@@ -132,7 +220,7 @@ loop2:
 	li $v0, 11
 	syscall
 	
-	addi $t0, $t0, 1 # Adiciona nas tentativas
+	addi $t0, $t0, 1
 	addi $t1, $t1, 1
 	j loop2
 	
@@ -146,13 +234,13 @@ end:
      
      li $v0, 8
      la $a0, end_input
-     syscall # Resposta do usuario
-     move $t0, $a0 # Grava a resposta em $t0
+     syscall 			# Resposta do usuario
+     move $t0, $a0 		# Grava a resposta em $t0
      
      la $t2, end_letter 
      lb $t3, ($t0)
      lb $t4, ($t2)
-     bne $t3, $t4, rand_4 # Se não escrever 'e' o jogo continua
+     bne $t3, $t4, rand_4 	# Se não escrever 'e' o jogo continua
 
      li $v0,10
      syscall
