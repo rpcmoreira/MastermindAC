@@ -160,7 +160,7 @@ sair_loop_a:
 	la $a0, MSG_INVALIDA
 	syscall
 			
-	jr $ra
+	j loop_tent				# Temos que usar a stack em cima para ele voltar a tentativa correta, sem stack vamos perder a posicao
 	
 #########################################################################################################################
 # VERIFICAÇÃO DO CODIGO RANDOM
@@ -199,12 +199,38 @@ cpc:
 	j verifica_loop
 	
 end_verifica:
-
-	la $a0, aux
 	li $v0, 4
+	la $a0, BR
 	syscall
-	jr $ra
+	
+	la $t6, aux
+	la $t7, verver
+	li $t8, 0
+end_verifica_a:
+	beq $t8, 4, end_ver_final	
+	lb $t3, ($t6)
+	beq $t3, 2, print_O
+	beq $t3, 1, print_o				#falta condição default aqui e em cima (Se nao for igual nem estiver no codigo), neste momento apenas e 1 ou 2
 
+
+print_O:
+	lb $a0, 2($t7)
+	li $v0, 11
+	syscall
+	addi $t8, $t8, 1
+	addi $t6, $t6, 4
+	j end_verifica_a
+	
+print_o:
+	lb $a0, 1($t7)
+	li $v0, 11
+	syscall
+	addi $t8, $t8, 1
+	addi $t6, $t6, 4
+	j end_verifica_a
+	
+end_ver_final:
+	jr $ra
 
 ############################################################################################################# FIM DO JOGO
 end_loop:
